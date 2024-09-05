@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #leaderboard { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        table, th, td { border: 1px solid black; padding: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Leaderboard</h1>
+    <form id="score-form">
+        <input type="text" id="username" placeholder="Tu nombre" required>
+        <input type="number" id="score" placeholder="Tu puntuación" required>
+        <button type="submit">Enviar</button>
+    </form>
+    <div id="leaderboard">
+        <h2>Tabla de clasificación</h2>
+        <table id="leaderboard-table">
+            <thead>
+                <tr><th>Nombre</th><th>Puntuación</th></tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        const API_URL = 'https://api.jsonbin.io/v3/b/YOUR_BIN_ID'; // Reemplaza con tu bin ID
+        const API_KEY = 'YOUR_API_KEY'; // Reemplaza con tu clave API
+
+        // Enviar nueva puntuación
+        document.getElementById('score-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const score = document.getElementById('score').value;
+
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': API_KEY
+                },
+                body: JSON.stringify({
+                    leaderboard: [
+                        ...await getLeaderboard(),
+                        { name: username, score: parseInt(score) }
+                    ]
+                })
+            });
+
+            cargarLeaderboard(); // Recargar la tabla
+        });
+
+        // Cargar el leaderboard
+        async function getLeaderboard() {
+            const response = await fetch(API_URL, {
+                headers: {
+                    'X-Master-Key': API_KEY
+                }
+            });
+            const data = await response.json();
+            return data.leaderboard || [];
+        }
+
+        async function cargarLeaderboard() {
+            const tbody = document.querySelector('#leaderboard-table tbody');
+            tbody.innerHTML = '';
+            const leaderboard = await getLeaderboard();
+            leaderboard.sort((a, b) => b.score - a.score).forEach(item => {
+                tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.score}</td></tr>`;
+            });
+        }
+
+        // Cargar el leaderboard al abrir la página
+        cargarLeaderboard();
+    </script>
+</body>
+</html>
